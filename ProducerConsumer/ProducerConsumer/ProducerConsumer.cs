@@ -25,30 +25,27 @@ namespace ProducerConsumer
 
             while (true)
             {
-                semaphoreFree.WaitOne();
+                
                 if (produced == false)
                 {
                     Console.WriteLine(name + "/Produced: " + count);
                     Thread.Sleep(50);
                     produced = true;
+                    count++;
                 }
+                semaphoreFree.WaitOne();
 
                 lock (_lockObject)
                 {
-                    queueSize = _items.Count;
-                }
-
-                if (queueSize < 5)
-                {
-                    lock (_lockObject)
+                    if (_items.Count < 5)
                     {
                         _items.Enqueue(count);
                         produced = false;
                         Console.WriteLine(name + "/Pus in lista: " + count);
-                        count++;
-                        semaphoreFull.Release();
-                    }
+                    }    
                 }
+
+                semaphoreFull.Release();
             }
         }
 
@@ -68,7 +65,7 @@ namespace ProducerConsumer
                     }
                 }
                 semaphoreFree.Release(1);
-                Thread.Sleep(10000);   
+                Thread.Sleep(1000);   
             }
         }
     }
