@@ -6,46 +6,52 @@ namespace ProducerConsumer
 {
     public class ProducerConsumer
     {
-        Semaphore semaphoreFree = new Semaphore(5, 5);
-        Semaphore semaphoreFull = new Semaphore(0, 5);
         private Queue<int> _items;
         private object _lockObject;
+        private object _condProd;
+        private object _condCons;
 
         public ProducerConsumer()
         {
             _items = new Queue<int>();
             _lockObject = new object();
+            _condProd = new object();
+            _condCons = new object();
         }
 
         public void Produce(string name)
         {
             int count = 1;
-            int queueSize;
-            bool produced = false;
 
             while (true)
             {
-                
-                if (produced == false)
-                {
-                    Console.WriteLine(name + "/Produced: " + count);
-                    Thread.Sleep(50);
-                    produced = true;
-                    count++;
-                }
-                semaphoreFree.WaitOne();
+
+                Console.WriteLine(name + "/Produced: " + count);
+                Thread.Sleep(50);
+
+                count++;
 
                 lock (_lockObject)
                 {
-                    if (_items.Count < 5)
+                    while (_items.Count == 5)
                     {
-                        _items.Enqueue(count);
-                        produced = false;
-                        Console.WriteLine(name + "/Pus in lista: " + count);
-                    }    
+                        Monitor.Exit(_lockObject);
+                        lock (_condProd)
+                        {
+                            Monitor.Wait(_condProd);
+                        }
+                    }
+
+                    _items.Enqueue(count);
                 }
 
-                semaphoreFull.Release();
+               
+
+                lock (_condCons)
+                {
+                    //Monitor.Exit(_condCons);
+                    Monitor.Pulse(_condCons);
+                }
             }
         }
 
@@ -54,18 +60,32 @@ namespace ProducerConsumer
             int count = 0;
             while (true)
             {
-                semaphoreFull.WaitOne();
 
                 lock (_lockObject)
                 {
-                    if (_items.Count != 0)
+                    while (_items.Count == 0)
                     {
-                        count = _items.Dequeue();
-                        Console.WriteLine(name + "/Scos din lista: " + count);
+                        Monitor.Exit(_lockObject);
+                        lock (_condCons)
+                        {
+                            //Monitor.Exit(_condCons);
+                            Monitor.Wait(_condCons);
+                        }
                     }
+
+                    count = _items.Dequeue();
                 }
-                semaphoreFree.Release(1);
-                Thread.Sleep(1000);   
+
+
+                
+                Console.WriteLine(name + "/Scos din lista: " + count);
+
+                lock (_condProd)
+                {
+                    Monitor.Pulse(_condProd);
+                }
+
+                Thread.Sleep(100);
             }
         }
     }
