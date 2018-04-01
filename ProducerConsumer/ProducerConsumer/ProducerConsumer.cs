@@ -10,6 +10,7 @@ namespace ProducerConsumer
         private object _lockObject;
         private object _condProd;
         private object _condCons;
+        ManualResetEvent queueEvent = new ManualResetEvent(); 
 
         public ProducerConsumer()
         {
@@ -34,7 +35,7 @@ namespace ProducerConsumer
                 lock (_lockObject)
                 {
                     while (_items.Count == 5)
-                    {
+                    {   
                         Monitor.Exit(_lockObject);
                         lock (_condProd)
                         {
