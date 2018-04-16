@@ -23,9 +23,14 @@ namespace MpiNetHelloWorld
                     for (int processPart = comm.Size - 1; processPart >= 0; processPart--)
                     {
 
-                        List<int> myPart = new List<int>(); ;
+                        List<int> myPart = new List<int>();
 
-                        for (int j = processPart * division; j < (processPart + 1) * division; j++)
+                        int inequal = 0;
+
+                        if (processPart == comm.Size - 1)
+                            inequal = numbers.Length % comm.Size;
+
+                        for (int j = processPart * division; j < ((processPart + 1) * division) + inequal; j++)
                         {
                             if (processPart == 0)
                             {
