@@ -11,19 +11,21 @@ namespace MpiNetHelloWorld
         {
             int[] numbers = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             int sum = 0;
-
+            
             using (new MPI.Environment(ref args))
             {
                 Intracommunicator comm = MPI.Communicator.world;
+                int division = numbers.Length / comm.Size;
 
                 if (comm.Rank == 0)
                 {
 
-                    for (int processPart = 0; processPart < comm.Size; processPart++)
+                    for (int processPart = comm.Size - 1; processPart >= 0; processPart--)
                     {
-                        for (int j = processPart * (numbers.Length / comm.Size);
-                            j < (processPart + 1) * (numbers.Length / comm.Size);
-                            j++)
+
+                        List<int> myPart = new List<int>(); ;
+
+                        for (int j = processPart * division; j < (processPart + 1) * division; j++)
                         {
                             if (processPart == 0)
                             {
@@ -31,12 +33,14 @@ namespace MpiNetHelloWorld
                             }
                             else
                             {
-                                List<int> myPart = new List<int>();
                                 myPart.Add(numbers[j]);
-
-                                comm.Send(myPart, processPart, 0);
                             }
                         }
+
+                        if(processPart != 0)
+                            comm.Send(myPart, processPart, 0);
+
+                        myPart.Clear();
                     }
 
                     for (int i = 1; i < comm.Size; i++)
@@ -51,6 +55,12 @@ namespace MpiNetHelloWorld
                     List<int> myList = comm.Receive<List<int>>(0, 0);
 
                     int mySum = myList.Sum();
+
+                    foreach (var i in myList)
+                    {
+                        Console.WriteLine(comm.Rank + "|" + i);
+                    }
+                    Console.WriteLine(comm.Rank + "|" + mySum);
 
                     comm.Send(mySum, 0, 0);
                 }
